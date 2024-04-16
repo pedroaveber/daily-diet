@@ -1,6 +1,6 @@
 import { Text, TouchableOpacityProps, TouchableOpacity } from 'react-native'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { white } from 'tailwindcss/colors'
+import { gray, white } from 'tailwindcss/colors'
 
 const buttonVariants = {
   primary: 'bg-gray-800',
@@ -30,12 +30,14 @@ export function Button({
       {icon && (
         <MaterialCommunityIcons
           style={{ marginRight: 3 }}
-          color={white}
+          color={variant === 'primary' ? white : gray[950]}
           size={24}
           name={icon}
         />
       )}
-      <Text className="font-nunito-bold text-center text-white text-base">
+      <Text
+        className={`font-nunito-bold text-center ${variant === 'primary' ? 'text-white' : 'text-gray-950'} text-base`}
+      >
         {content}
       </Text>
     </TouchableOpacity>

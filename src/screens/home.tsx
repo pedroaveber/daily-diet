@@ -40,6 +40,10 @@ export function Home() {
     navigation.navigate('new-meal')
   }
 
+  function handleGetMealDetails(name: string, date: string) {
+    navigation.navigate('meal-details', { name, date })
+  }
+
   async function fetchMeals() {
     setIsFetching(true)
 
@@ -123,9 +127,14 @@ export function Home() {
               </Text>
             )
           }}
-          renderItem={({ item }) => {
+          renderItem={({ item, section: { title } }) => {
             return (
-              <Meal hour={item.hour} name={item.name} onDiet={item.healthly} />
+              <Meal
+                onPress={() => handleGetMealDetails(item.name, title)}
+                hour={item.hour}
+                name={item.name}
+                onDiet={item.healthly}
+              />
             )
           }}
         />

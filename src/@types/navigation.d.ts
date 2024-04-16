@@ -7,6 +7,14 @@ export declare global {
       'meal-created': {
         healthly: boolean
       }
+      'meal-details': {
+        date: string
+        name: string
+      }
+      'edit-meal': {
+        date: string
+        name: string
+      }
     }
   }
 }
