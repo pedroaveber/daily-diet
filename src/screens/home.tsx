@@ -1,4 +1,4 @@
-import { SectionList, Text, View } from 'react-native'
+import { Alert, SectionList, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 import { Header } from '@components/header'
@@ -6,63 +6,97 @@ import { DietResume } from '@components/diet-resume'
 import { Button } from '@components/button'
 import { format, parseISO } from 'date-fns'
 import { Meal } from '@components/meal'
-import { useNavigation } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
+import { getMeals } from '@storage/meals/get-meals'
+import { useCallback, useState } from 'react'
+import { Loading } from '@components/loading'
 
-const fakeData = [
-  {
-    title: '2024-01-01',
-    data: [
-      {
-        hour: '08:00',
-        name: 'Ovos mexidos com abacate',
-        onDiet: true,
-      },
-      {
-        hour: '12:00',
-        name: 'Batata frita e bife a milanesa',
-        onDiet: false,
-      },
-      {
-        hour: '15:00',
-        name: 'Batida de banana e whey',
-        onDiet: true,
-      },
-    ],
-  },
-  {
-    title: '2024-01-02',
-    data: [
-      {
-        hour: '08:00',
-        name: 'Biscoitos waffer e Nescau',
-        onDiet: false,
-      },
-      {
-        hour: '12:00',
-        name: 'Arroz, feijão e bife',
-        onDiet: true,
-      },
-      {
-        hour: '15:00',
-        name: 'Iogurte natural com granola',
-        onDiet: true,
-      },
-    ],
-  },
-]
+interface SectionListData {
+  title: string
+  data: {
+    hour: string
+    name: string
+    healthly: boolean
+  }[]
+}
+
+interface Metrics {
+  totalMeals: number
+  totalHealthlyMeals: number
+}
 
 export function Home() {
+  const [registeredMeals, setRegisteredMeals] = useState<SectionListData[]>([])
+  const [isFetchig, setIsFetching] = useState(true)
+
+  const [metrics, setMetrics] = useState<Metrics>({
+    totalHealthlyMeals: 0,
+    totalMeals: 0,
+  })
+
   const navigation = useNavigation()
 
   function handleNavigateToNewMeal() {
     navigation.navigate('new-meal')
   }
 
+  async function fetchMeals() {
+    setIsFetching(true)
+
+    try {
+      const meals = await getMeals()
+      const data: SectionListData[] = []
+
+      for (const meal of meals) {
+        const date = meal.date
+        const dateIndex = data.findIndex((item) => item.title === date)
+        const dateAlreadyExists = dateIndex !== -1
+
+        if (dateAlreadyExists) {
+          data[dateIndex].data.push({
+            hour: meal.time,
+            name: meal.name,
+            healthly: meal.healthly,
+          })
+        } else {
+          data.push({
+            title: date,
+            data: [
+              {
+                hour: meal.time,
+                name: meal.name,
+                healthly: meal.healthly,
+              },
+            ],
+          })
+        }
+      }
+
+      setMetrics({
+        totalMeals: meals.length,
+        totalHealthlyMeals: meals.filter((meal) => meal.healthly).length,
+      })
+      setRegisteredMeals(data)
+    } catch (error) {
+      Alert.alert('Erro ao buscar refeições', 'Ocorreu um erro inesperado')
+    } finally {
+      setIsFetching(false)
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchMeals()
+    }, []),
+  )
+
   return (
     <SafeAreaView className="flex-1 p-6 bg-zinc-50">
       <Header />
 
-      <DietResume percentage={87.65} />
+      <DietResume
+        percentage={(metrics.totalHealthlyMeals / metrics.totalMeals) * 100}
+      />
 
       <View className="w-full items-start gap-2">
         <Text className="font-nunito text-gray-950 text-base">Refeições</Text>
@@ -75,21 +109,27 @@ export function Home() {
         />
       </View>
 
-      <SectionList
-        className="mt-8"
-        sections={fakeData}
-        keyExtractor={(_, index) => index.toString()}
-        renderSectionHeader={({ section: { title } }) => {
-          return (
-            <Text className="font-nunito-bold text-gray-950 text-lg mb-2">
-              {format(parseISO(title), 'dd.MM.yy')}
-            </Text>
-          )
-        }}
-        renderItem={({ item }) => {
-          return <Meal hour={item.hour} name={item.name} onDiet={item.onDiet} />
-        }}
-      />
+      {isFetchig ? (
+        <Loading />
+      ) : (
+        <SectionList
+          className="mt-8"
+          sections={registeredMeals}
+          keyExtractor={(_, index) => index.toString()}
+          renderSectionHeader={({ section: { title } }) => {
+            return (
+              <Text className="font-nunito-bold text-gray-950 text-lg mb-2">
+                {format(parseISO(title), 'dd.MM.yy')}
+              </Text>
+            )
+          }}
+          renderItem={({ item }) => {
+            return (
+              <Meal hour={item.hour} name={item.name} onDiet={item.healthly} />
+            )
+          }}
+        />
+      )}
     </SafeAreaView>
   )
 }

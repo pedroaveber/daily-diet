@@ -4,6 +4,7 @@ import {
   Platform,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native'
 import { useState } from 'react'
 
@@ -16,12 +17,14 @@ import { ArrowLeft } from 'phosphor-react-native'
 import { useNavigation } from '@react-navigation/native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DietSwitchButton } from '@components/diet-switch-button'
+import { AppError } from '@utils/errors/app-error'
+import { createMeal } from '@storage/meals/create-meal'
 
 export function NewMeal() {
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
-  const [isOnDiet, setIsOnDiet] = useState(true)
+  const [isHealthly, setIsHealthly] = useState(true)
   const [description, setDescription] = useState('')
 
   const navigation = useNavigation()
@@ -30,8 +33,27 @@ export function NewMeal() {
     navigation.navigate('home')
   }
 
-  function handleCreateMeal() {
-    navigation.navigate('meal-created', { healthly: isOnDiet })
+  async function handleCreateMeal() {
+    const [day, month, year] = date.split('/')
+
+    try {
+      await createMeal({
+        name,
+        time,
+        description,
+        date: `${year}-${month}-${day}`,
+        healthly: isHealthly,
+      })
+
+      navigation.navigate('meal-created', { healthly: isHealthly })
+    } catch (error) {
+      console.error(error)
+      if (error instanceof AppError) {
+        Alert.alert('Cadastrar refeição', error.message)
+      } else {
+        Alert.alert('Cadastrar refeição', 'Ocorreu um erro inesperado')
+      }
+    }
   }
 
   return (
@@ -79,21 +101,21 @@ export function NewMeal() {
           <View className="w-full items-start flex-1 flex-row">
             <View className="w-1/2 pr-1.5">
               <DietSwitchButton
-                isActive={isOnDiet}
+                isActive={isHealthly}
                 label="Sim"
-                onPress={() => setIsOnDiet(true)}
+                onPress={() => setIsHealthly(true)}
                 variant="positive"
-                disabled={isOnDiet}
+                disabled={isHealthly}
               />
             </View>
 
             <View className="w-1/2 pl-1.5">
               <DietSwitchButton
-                isActive={!isOnDiet}
+                isActive={!isHealthly}
                 label="Não"
-                onPress={() => setIsOnDiet(false)}
+                onPress={() => setIsHealthly(false)}
                 variant="negative"
-                disabled={!isOnDiet}
+                disabled={!isHealthly}
               />
             </View>
           </View>
