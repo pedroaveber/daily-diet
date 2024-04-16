@@ -5,7 +5,8 @@ import {
   useNavigation,
   useRoute,
 } from '@react-navigation/native'
-import { getMealByNameAndDate } from '@storage/meals/get-meal-by-name-and-date'
+import { deleteMealById } from '@storage/meals/delete-meal-by-id'
+import { getMealById } from '@storage/meals/get-meal-by-id'
 import { AppError } from '@utils/errors/app-error'
 import { format, parseISO } from 'date-fns'
 import { ArrowLeft } from 'phosphor-react-native'
@@ -16,8 +17,7 @@ import { MealDTO } from 'src/@dtos/meal-dto'
 import { gray } from 'tailwindcss/colors'
 
 interface RouteParams {
-  name: string
-  date: string
+  id: string
 }
 
 export function MealDetails() {
@@ -26,7 +26,7 @@ export function MealDetails() {
 
   const route = useRoute()
   const navigation = useNavigation()
-  const { name, date } = route.params as RouteParams
+  const { id } = route.params as RouteParams
 
   const isHealthly = meal.healthly
 
@@ -35,13 +35,13 @@ export function MealDetails() {
   }
 
   function handleNavigateToEditMeal() {
-    navigation.navigate('edit-meal', { name: meal.name, date: meal.date })
+    navigation.navigate('edit-meal', { id })
   }
 
   async function getMealDetails() {
     setIsFetching(true)
     try {
-      const data = await getMealByNameAndDate(name, date)
+      const data = await getMealById(id)
       setMeal(data)
     } catch (error) {
       if (error instanceof AppError) {
@@ -51,6 +51,32 @@ export function MealDetails() {
       }
     } finally {
       setIsFetching(false)
+    }
+  }
+
+  async function handleDeleteMeal() {
+    try {
+      Alert.alert(
+        'Excluir refeição',
+        'Deseja realmente excluir essa refeição?',
+        [
+          { style: 'default', text: 'Cancelar' },
+          {
+            style: 'destructive',
+            text: 'Excluir',
+            onPress: async () => {
+              await deleteMealById(id)
+              navigation.navigate('home')
+            },
+          },
+        ],
+      )
+    } catch (error) {
+      if (error instanceof AppError) {
+        Alert.alert('Excluir refeição', error.message)
+      } else {
+        Alert.alert('Excluir refeição', 'Ocorreu um erro inesperado')
+      }
     }
   }
 
@@ -81,7 +107,7 @@ export function MealDetails() {
 
       <View className="flex-1 pb-10 bg-white rounded-t-[20px] -mb-8 p-6 pt-8">
         <Text className="text-xl font-nunito-bold text-gray-950 mt-4">
-          {name}
+          {meal.name}
         </Text>
 
         <Text className="text-base font-nunito text-gray-950">
@@ -116,6 +142,7 @@ export function MealDetails() {
 
         <View className="w-full mb-8 mt-2">
           <Button
+            onPress={handleDeleteMeal}
             variant="outline"
             content="Excluir refeição"
             icon="trash-can"

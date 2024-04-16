@@ -19,6 +19,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { DietSwitchButton } from '@components/diet-switch-button'
 import { AppError } from '@utils/errors/app-error'
 import { createMeal } from '@storage/meals/create-meal'
+import uuid from 'react-native-uuid'
 
 export function NewMeal() {
   const [name, setName] = useState('')
@@ -43,6 +44,7 @@ export function NewMeal() {
         description,
         date: `${year}-${month}-${day}`,
         healthly: isHealthly,
+        id: uuid.v4() as string,
       })
 
       navigation.navigate('meal-created', { healthly: isHealthly })

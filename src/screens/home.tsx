@@ -17,6 +17,7 @@ interface SectionListData {
     hour: string
     name: string
     healthly: boolean
+    id: string
   }[]
 }
 
@@ -40,8 +41,8 @@ export function Home() {
     navigation.navigate('new-meal')
   }
 
-  function handleGetMealDetails(name: string, date: string) {
-    navigation.navigate('meal-details', { name, date })
+  function handleGetMealDetails(id: string) {
+    navigation.navigate('meal-details', { id })
   }
 
   async function fetchMeals() {
@@ -51,6 +52,10 @@ export function Home() {
       const meals = await getMeals()
       const data: SectionListData[] = []
 
+      if (meals.length === 0) {
+        return setRegisteredMeals([])
+      }
+
       for (const meal of meals) {
         const date = meal.date
         const dateIndex = data.findIndex((item) => item.title === date)
@@ -58,6 +63,7 @@ export function Home() {
 
         if (dateAlreadyExists) {
           data[dateIndex].data.push({
+            id: meal.id,
             hour: meal.time,
             name: meal.name,
             healthly: meal.healthly,
@@ -67,6 +73,7 @@ export function Home() {
             title: date,
             data: [
               {
+                id: meal.id,
                 hour: meal.time,
                 name: meal.name,
                 healthly: meal.healthly,
@@ -127,10 +134,10 @@ export function Home() {
               </Text>
             )
           }}
-          renderItem={({ item, section: { title } }) => {
+          renderItem={({ item }) => {
             return (
               <Meal
-                onPress={() => handleGetMealDetails(item.name, title)}
+                onPress={() => handleGetMealDetails(item.id)}
                 hour={item.hour}
                 name={item.name}
                 onDiet={item.healthly}

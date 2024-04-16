@@ -1,4 +1,5 @@
 export interface MealDTO {
+  id: string
   date: string
   name: string
   time: string

@@ -8,12 +8,10 @@ export declare global {
         healthly: boolean
       }
       'meal-details': {
-        date: string
-        name: string
+        id: string
       }
       'edit-meal': {
-        date: string
-        name: string
+        id: string
       }
     }
   }

@@ -22,17 +22,17 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { DietSwitchButton } from '@components/diet-switch-button'
 import { AppError } from '@utils/errors/app-error'
-import { getMealByNameAndDate } from '@storage/meals/get-meal-by-name-and-date'
+import { getMealById } from '@storage/meals/get-meal-by-id'
 import { Loading } from '@components/loading'
-import { updateMeal } from '@storage/meals/update-meail-by-name-and-date'
+import { updateMeal } from '@storage/meals/update-meail'
 import { format, parseISO } from 'date-fns'
 
 interface RouteParams {
-  name: string
-  date: string
+  id: string
 }
 
 export function EditMeal() {
+  const [id, setId] = useState('')
   const [name, setName] = useState('')
   const [date, setDate] = useState('')
   const [time, setTime] = useState('')
@@ -44,7 +44,7 @@ export function EditMeal() {
   const navigation = useNavigation()
   const router = useRoute()
 
-  const { name: mealName, date: mealDate } = router.params as RouteParams
+  const { id: mealId } = router.params as RouteParams
 
   function handleGoBackHome() {
     navigation.navigate('home')
@@ -56,14 +56,14 @@ export function EditMeal() {
     try {
       await updateMeal(
         {
+          id,
           name,
           time,
           description,
           date: `${year}-${month}-${day}`,
           healthly: isHealthly,
         },
-        mealName,
-        mealDate,
+        id,
       )
 
       navigation.navigate('meal-created', { healthly: isHealthly })
@@ -81,8 +81,9 @@ export function EditMeal() {
     setIsFetching(true)
 
     try {
-      const meal = await getMealByNameAndDate(mealName, mealDate)
+      const meal = await getMealById(mealId)
 
+      setId(meal.id)
       setName(meal.name)
       setDate(format(parseISO(meal.date), 'dd/MM/yyyy'))
       setTime(meal.time)
